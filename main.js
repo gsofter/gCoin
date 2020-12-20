@@ -2,31 +2,43 @@
 var sha256 = require("crypto-js/sha256");
 
 class Block {
-  constructor(index, timestamp, data, previousHash = "") {
-    this.index = index;
+  constructor(timestamp, data, previousHash = "") {
     this.timestamp = timestamp;
     this.data = data;
     this.previousHash = previousHash;
     this.hash = this.calculateHash();
+    this.nonce = 0;
   }
 
   calculateHash() {
     return sha256(
-      this.index +
-        this.previousHash +
+      this.previousHash +
         this.timestamp +
-        JSON.stringify(this.data)
+        JSON.stringify(this.data) +
+        this.nonce
     ).toString();
+  }
+
+  mineBlock(difficulty) {
+    while (
+      this.hash.substring(0, difficulty) !== Array(difficulty + 1).join("0")
+    ) {
+      this.nonce++;
+      this.hash = this.calculateHash();
+    }
+
+    console.log("Block mined: ", this.hash);
   }
 }
 
 class BlockChain {
   constructor() {
     this.chain = [this.createGenesisBlock()];
+    this.difficulty = 2;
   }
 
   createGenesisBlock() {
-    return new Block(0, "01/01/2017", "Genesis block", "0");
+    return new Block("01/01/2017", "Genesis block", "0");
   }
 
   getLatestBlock() {
@@ -35,7 +47,7 @@ class BlockChain {
 
   addBlock(newBlock) {
     newBlock.previousHash = this.getLatestBlock().hash;
-    newBlock.hash = newBlock.calculateHash();
+    newBlock.mineBlock(this.difficulty);
     this.chain.push(newBlock);
   }
 
@@ -60,8 +72,10 @@ class BlockChain {
 }
 
 let gCoin = new BlockChain();
-gCoin.addBlock(new Block(1, "10/07/2017", { amount: 4 }));
-gCoin.addBlock(new Block(2, "12/07/2017", { amount: 10 }));
+console.log("Mining Block 1... ");
+gCoin.addBlock(new Block("10/07/2017", { amount: 4 }));
 
-console.log(JSON.stringify(gCoin, null, 4));
+console.log("Mining Block 2... ");
+gCoin.addBlock(new Block("12/07/2017", { amount: 10 }));
+
 console.log(gCoin.isChainValid());
